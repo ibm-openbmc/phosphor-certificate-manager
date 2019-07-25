@@ -26,6 +26,27 @@ Manager::Manager(sdbusplus::bus::bus& bus, sdeventplus::Event& event,
     bus(bus), event(event), objectPath(path), certType(type),
     unitToRestart(std::move(unit)), certInstallPath(std::move(installPath))
 {
+    // create parent certificate path if not existing
+    try
+    {
+        if (!fs::exists(certParentInstallPath))
+        {
+            fs::create_directories(certParentInstallPath);
+        }
+    }
+    catch (fs::filesystem_error& e)
+    {
+        log<level::ERR>("Failed to create directory", entry("ERR=%s", e.what()),
+                        entry("DIRECTORY=%s", certParentInstallPath.c_str()));
+        report<InternalFailure>();
+    }
+
+    // Generating RSA private key file if certificate type is server/client
+    if (certType != AUTHORITY)
+    {
+        createRSAPrivateKeyFile();
+    }
+
     // restore any existing certificates
     if (fs::exists(certInstallPath))
     {
