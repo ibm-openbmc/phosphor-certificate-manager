@@ -18,13 +18,19 @@ using Reason = xyz::openbmc_project::Certs::InvalidCertificate::REASON;
 
 using X509_REQ_Ptr = std::unique_ptr<X509_REQ, decltype(&::X509_REQ_free)>;
 using BIGNUM_Ptr = std::unique_ptr<BIGNUM, decltype(&::BN_free)>;
+using InvalidArgument =
+    sdbusplus::xyz::openbmc_project::Common::Error::InvalidArgument;
+using Argument = xyz::openbmc_project::Common::InvalidArgument;
+
+constexpr auto SUPPORTED_KEYBITLENGTH = 2048;
 
 Manager::Manager(sdbusplus::bus::bus& bus, sdeventplus::Event& event,
                  const char* path, const CertificateType& type,
                  UnitsToRestart&& unit, CertInstallPath&& installPath) :
     Ifaces(bus, path),
     bus(bus), event(event), objectPath(path), certType(type),
-    unitToRestart(std::move(unit)), certInstallPath(std::move(installPath))
+    unitToRestart(std::move(unit)), certInstallPath(std::move(installPath)),
+    certParentInstallPath(fs::path(certInstallPath).parent_path())
 {
     // create parent certificate path if not existing
     try
@@ -272,15 +278,11 @@ void Manager::generateCSRHelper(
 
     // Used EC algorithm as default if user did not give algorithm type.
     if (keyPairAlgorithm == "RSA")
-        pKey = std::move(generateRSAKeyPair(keyBitLength));
+        pKey = getRSAKeyPair(keyBitLength);
     else if ((keyPairAlgorithm == "EC") || (keyPairAlgorithm.empty()))
-        pKey = std::move(generateECKeyPair(keyCurveId));
+        pKey = generateECKeyPair(keyCurveId);
     else
     {
-        using InvalidArgument =
-            sdbusplus::xyz::openbmc_project::Common::Error::InvalidArgument;
-        using Argument = xyz::openbmc_project::Common::InvalidArgument;
-
         log<level::ERR>("Given Key pair algorithm is not supported. Supporting "
                         "RSA and EC only");
         elog<InvalidArgument>(
@@ -296,7 +298,7 @@ void Manager::generateCSRHelper(
     }
 
     // Write private key to file
-    writePrivateKey(pKey);
+    writePrivateKey(pKey, PRIV_KEY_FILE_NAME);
 
     // set sign key of x509 req
     ret = X509_REQ_sign(x509Req.get(), pKey.get(), EVP_sha256());
@@ -307,9 +309,8 @@ void Manager::generateCSRHelper(
     }
 
     log<level::INFO>("Writing CSR to file");
-    std::string path = fs::path(certInstallPath).parent_path();
-    std::string csrFilePath = path + '/' + CSR_FILE_NAME;
-    writeCSR(csrFilePath, x509Req);
+    fs::path csrFilePath = certParentInstallPath / CSR_FILE_NAME;
+    writeCSR(csrFilePath.string(), x509Req);
 }
 
 EVP_PKEY_Ptr Manager::generateRSAKeyPair(const int64_t keyBitLength)
@@ -417,12 +418,12 @@ EVP_PKEY_Ptr Manager::generateECKeyPair(const std::string& curveId)
     return pKey;
 }
 
-void Manager::writePrivateKey(const EVP_PKEY_Ptr& pKey)
+void Manager::writePrivateKey(const EVP_PKEY_Ptr& pKey,
+                              const std::string& privKeyFileName)
 {
     log<level::INFO>("Writing private key to file");
     // write private key to file
-    std::string path = fs::path(certInstallPath).parent_path();
-    std::string privKeyPath = path + '/' + PRIV_KEY_FILE_NAME;
+    fs::path privKeyPath = certParentInstallPath / privKeyFileName;
 
     FILE* fp = std::fopen(privKeyPath.c_str(), "w");
     if (fp == NULL)
@@ -523,6 +524,62 @@ void Manager::createCertificate()
         report<InvalidCertificate>(
             Reason("Existing certificate file is corrupted"));
     }
+}
+
+void Manager::createRSAPrivateKeyFile()
+{
+    fs::path rsaPrivateKeyFileName =
+        certParentInstallPath / RSA_PRIV_KEY_FILE_NAME;
+
+    try
+    {
+        if (!fs::exists(rsaPrivateKeyFileName))
+        {
+            writePrivateKey(generateRSAKeyPair(SUPPORTED_KEYBITLENGTH),
+                            RSA_PRIV_KEY_FILE_NAME);
+        }
+    }
+    catch (const InternalFailure& e)
+    {
+        report<InternalFailure>();
+    }
+}
+
+EVP_PKEY_Ptr Manager::getRSAKeyPair(const int64_t keyBitLength)
+{
+    if (keyBitLength != SUPPORTED_KEYBITLENGTH)
+    {
+        log<level::ERR>(
+            "Given Key bit length is not supported",
+            entry("GIVENKEYBITLENGTH=%d", keyBitLength),
+            entry("SUPPORTEDKEYBITLENGTH=%d", SUPPORTED_KEYBITLENGTH));
+        elog<InvalidArgument>(
+            Argument::ARGUMENT_NAME("KEYBITLENGTH"),
+            Argument::ARGUMENT_VALUE(std::to_string(keyBitLength).c_str()));
+    }
+    fs::path rsaPrivateKeyFileName =
+        certParentInstallPath / RSA_PRIV_KEY_FILE_NAME;
+
+    FILE* privateKeyFile = std::fopen(rsaPrivateKeyFileName.c_str(), "r");
+    if (!privateKeyFile)
+    {
+        log<level::ERR>("Unable to open RSA private key file to read",
+                        entry("RSAKEYFILE=%s", rsaPrivateKeyFileName.c_str()),
+                        entry("ERRORREASON=%s", strerror(errno)));
+        elog<InternalFailure>();
+    }
+
+    EVP_PKEY_Ptr privateKey(
+        PEM_read_PrivateKey(privateKeyFile, nullptr, nullptr, nullptr),
+        ::EVP_PKEY_free);
+    std::fclose(privateKeyFile);
+
+    if (!privateKey)
+    {
+        log<level::ERR>("Error occured during PEM_read_PrivateKey call");
+        elog<InternalFailure>();
+    }
+    return privateKey;
 }
 } // namespace certs
 } // namespace phosphor
