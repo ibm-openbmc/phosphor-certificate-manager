@@ -84,6 +84,18 @@ class Certificate : public CertIfaces
     void populateProperties();
 
   private:
+    /**
+     * @brief Return error if ceritificate expiry date is gt 2038
+     *
+     * Parse the certificate and return error if certificate expiry date
+     * is gt 2038.
+     *
+     * @param[in] cert  Reference to certificate object uploaded
+     *
+     * @return void
+     */
+    void validateCertificateExpiryDate(const X509_Ptr& cert);
+
     /** @brief Validate and Replace/Install the certificate file
      *  Install/Replace the existing certificate file with another
      *  (possibly CA signed) Certificate file.

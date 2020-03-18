@@ -32,68 +32,77 @@ Manager::Manager(sdbusplus::bus::bus& bus, sdeventplus::Event& event,
     unitToRestart(std::move(unit)), certInstallPath(std::move(installPath)),
     certParentInstallPath(fs::path(certInstallPath).parent_path())
 {
-    // create parent certificate path if not existing
     try
     {
-        if (!fs::exists(certParentInstallPath))
+        // create parent certificate path if not existing
+        try
         {
-            fs::create_directories(certParentInstallPath);
+            if (!fs::exists(certParentInstallPath))
+            {
+                fs::create_directories(certParentInstallPath);
+            }
+            auto permission = fs::perms::owner_read | fs::perms::owner_write |
+                              fs::perms::owner_exec;
+            fs::permissions(certParentInstallPath, permission,
+                            fs::perm_options::replace);
         }
-        auto permission = fs::perms::owner_read | fs::perms::owner_write |
-                          fs::perms::owner_exec;
-        fs::permissions(certParentInstallPath, permission,
-                        fs::perm_options::replace);
-    }
-    catch (fs::filesystem_error& e)
-    {
-        log<level::ERR>("Failed to create directory", entry("ERR=%s", e.what()),
-                        entry("DIRECTORY=%s", certParentInstallPath.c_str()));
-        report<InternalFailure>();
-    }
+        catch (fs::filesystem_error& e)
+        {
+            log<level::ERR>(
+                "Failed to create directory", entry("ERR=%s", e.what()),
+                entry("DIRECTORY=%s", certParentInstallPath.c_str()));
+            report<InternalFailure>();
+        }
 
-    // Generating RSA private key file if certificate type is server/client
-    if (certType != AUTHORITY)
-    {
-        createRSAPrivateKeyFile();
-    }
+        // Generating RSA private key file if certificate type is server/client
+        if (certType != AUTHORITY)
+        {
+            createRSAPrivateKeyFile();
+        }
 
-    // restore any existing certificates
-    if (fs::exists(certInstallPath))
-    {
-        createCertificate();
-    }
+        // restore any existing certificates
+        if (fs::exists(certInstallPath))
+        {
+            createCertificate();
+        }
 
-    // watch is not required for authority certificates
-    if (certType != AUTHORITY)
-    {
-        // watch for certificate file create/replace
-        certWatchPtr = std::make_unique<
-            Watch>(event, certInstallPath, [this]() {
-            try
-            {
-                // if certificate file existing update it
-                if (certificatePtr != nullptr)
+        // watch is not required for authority certificates
+        if (certType != AUTHORITY)
+        {
+            // watch for certificate file create/replace
+            certWatchPtr = std::make_unique<
+                Watch>(event, certInstallPath, [this]() {
+                try
                 {
-                    log<level::INFO>(
-                        "Inotify callback to update certificate properties");
-                    certificatePtr->populateProperties();
+                    // if certificate file existing update it
+                    if (certificatePtr != nullptr)
+                    {
+                        log<level::INFO>("Inotify callback to update "
+                                         "certificate properties");
+                        certificatePtr->populateProperties();
+                    }
+                    else
+                    {
+                        log<level::INFO>(
+                            "Inotify callback to create certificate object");
+                        createCertificate();
+                    }
                 }
-                else
+                catch (const InternalFailure& e)
                 {
-                    log<level::INFO>(
-                        "Inotify callback to create certificate object");
-                    createCertificate();
+                    commit<InternalFailure>();
                 }
-            }
-            catch (const InternalFailure& e)
-            {
-                commit<InternalFailure>();
-            }
-            catch (const InvalidCertificate& e)
-            {
-                commit<InvalidCertificate>();
-            }
-        });
+                catch (const InvalidCertificate& e)
+                {
+                    commit<InvalidCertificate>();
+                }
+            });
+        }
+    }
+    catch (std::exception& ex)
+    {
+        log<level::ERR>("Error in certificate manager constructor",
+                        entry("ERROR_STR=%s", ex.what()));
     }
 }
 
