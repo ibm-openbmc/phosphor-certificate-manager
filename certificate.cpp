@@ -225,11 +225,9 @@ void Certificate::install(const std::string& filePath, bool isSkipUnitReload)
     else if (errCode == 0)
     {
         errCode = X509_STORE_CTX_get_error(storeCtx.get());
-        log<level::INFO>(
-            "Error occured during X509_verify_cert call, checking for known "
-            "error",
-            entry("FILE=%s", filePath.c_str()), entry("ERRCODE=%d", errCode),
-            entry("ERROR_STR=%s", X509_verify_cert_error_string(errCode)));
+        log<level::ERR>("Certificate verification failed",
+                        entry("FILE=%s", filePath.c_str()),
+                        entry("ERRCODE=%d", errCode));
     }
     else
     {
@@ -246,11 +244,17 @@ void Certificate::install(const std::string& filePath, bool isSkipUnitReload)
     {
         if (errCode == X509_V_ERR_CERT_HAS_EXPIRED)
         {
+            log<level::ERR>("Expired certificate ");
             elog<InvalidCertificate>(Reason("Expired Certificate"));
         }
+        log<level::ERR>(
+            "Certificate validation failed", entry("ERRCODE=%d", errCode),
+            entry("ERROR_STR=%s", X509_verify_cert_error_string(errCode)));
         // Loging general error here.
         elog<InvalidCertificate>(Reason("Certificate validation failed"));
     }
+
+    validateCertificateExpiryDate(cert);
 
     // Invoke type specific append private key function.
     auto appendIter = appendKeyMap.find(certType);
@@ -317,6 +321,31 @@ void Certificate::install(const std::string& filePath, bool isSkipUnitReload)
     if (certWatchPtr)
     {
         certWatchPtr->startWatch();
+    }
+}
+
+void Certificate::validateCertificateExpiryDate(const X509_Ptr& cert)
+{
+    int days = 0;
+    int secs = 0;
+
+    ASN1_TIME_ptr epoch(ASN1_TIME_new(), ASN1_STRING_free);
+    // Set time to 12:00am GMT, Jan 1 1970
+    ASN1_TIME_set_string(epoch.get(), "700101120000Z");
+
+    ASN1_TIME* notAfter = X509_get_notAfter(cert.get());
+    ASN1_TIME_diff(&days, &secs, epoch.get(), notAfter);
+
+    static const int dayToSeconds = 24 * 60 * 60;
+
+    // TODO #issue15 - allow only upto year 2038 which time_t supports for now
+    // time_t is defined as int32 so any expiry date greater than 2038 will
+    // cause the time_t variable overflow resulting in -ve number.
+    if (days > (INT_MAX - secs) / dayToSeconds)
+    {
+        log<level::ERR>("Certificate expiry date is beyond year 2038",
+                        entry("DAYS=%d", days));
+        elog<InvalidCertificate>(Reason("Expiry date should be below 2038"));
     }
 }
 
@@ -389,7 +418,7 @@ void Certificate::populateProperties()
     // Set time to 12:00am GMT, Jan 1 1970
     ASN1_TIME_set_string(epoch.get(), "700101120000Z");
 
-    static const int dayToSeconds = 24 * 60 * 60;
+    static const uint32_t dayToSeconds = 24 * 60 * 60;
     ASN1_TIME* notAfter = X509_get_notAfter(cert.get());
     ASN1_TIME_diff(&days, &secs, epoch.get(), notAfter);
     CertificateIface::validNotAfter((days * dayToSeconds) + secs);
