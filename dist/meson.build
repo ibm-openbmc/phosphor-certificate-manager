@@ -12,6 +12,10 @@ if get_option('ca-cert-extension').allowed()
     service_files += 'bmc-vmi-ca-manager.service'
 endif
 
+if not get_option('acf-cert-extension').disabled()
+    service_files += 'bmc-acf-manager.service'
+endif
+
 if get_option('config-bmcweb').allowed()
     busconfig += 'busconfig/phosphor-bmcweb-cert-config.conf'
     certs += 'env/bmcweb'

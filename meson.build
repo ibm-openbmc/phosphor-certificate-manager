@@ -79,6 +79,10 @@ if get_option('ca-cert-extension').allowed()
     subdir('bmc-vmi-ca')
 endif
 
+if not get_option('acf-cert-extension').disabled()
+  subdir('bmc-acf')
+endif
+
 subdir('dist')
 
 if get_option('tests').allowed()
