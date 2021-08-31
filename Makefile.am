@@ -45,7 +45,7 @@ phosphor_certificate_manager_LDFLAGS = \
 
 phosphor_certificate_manager_CXXFLAGS = \
 	$(SYSTEMD_CFLAGS) \
-	$(SDEVENTPLUS_LIBS) \
+	$(SDEVENTPLUS_CFLAGS) \
 	$(PHOSPHOR_DBUS_INTERFACES_CFLAGS) \
 	$(PHOSPHOR_LOGGING_CFLAGS)
 
@@ -55,7 +55,15 @@ if CA_CERT_EXTENSION
 SUBDIRS += bmc-vmi-ca
 endif
 
+if ACF_CERT_EXTENSION
+SUBDIRS += bmc-acf
+endif
+
 check_PROGRAMS =
 XFAIL_TESTS =
 
 TESTS = $(check_PROGRAMS)
+
+if ACF_CERT_EXTENSION
+SUBDIRS += bmc-acf
+endif
