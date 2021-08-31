@@ -196,6 +196,16 @@ AM_CONDITIONAL([CA_CERT_EXTENSION], [test "x$enable_ca_cert_extension" == "xyes"
 AS_IF([test "x$enable_ca_cert_extension" == "xyes"],
       [AC_CONFIG_FILES([bmc-vmi-ca/Makefile])])
 
+AC_ARG_ENABLE([acf-cert-extension],
+              AS_HELP_STRING([--enable-acf-cert-extension],
+                   [enable ACF certificate])
+)
+
+AM_CONDITIONAL([ACF_CERT_EXTENSION], [test "x$enable_acf_cert_extension" == "xyes"])
+
+AS_IF([test "x$enable_acf_cert_extension" == "xyes"],
+      [AC_CONFIG_FILES([bmc-acf/Makefile])])
+
 # Create configured output
 AC_CONFIG_FILES([Makefile test/Makefile])
 AC_OUTPUT
