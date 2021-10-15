@@ -14,6 +14,7 @@ AC_PROG_MAKE_SET
 
 # Checks for library functions
 LT_INIT # Required for systemd linking
+AM_CONDITIONAL(HAVE_SYSTEMD, [test -n "$with_systemdsystemunitdir" -a "x$with_systemdsystemunitdir" != xno ])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AX_CXX_COMPILE_STDCXX([17], [noext], [mandatory])
