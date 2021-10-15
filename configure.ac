@@ -71,6 +71,7 @@ AC_CHECK_HEADER(experimental/filesystem, [],
 PKG_CHECK_MODULES([PHOSPHOR_DBUS_INTERFACES], [phosphor-dbus-interfaces])
 PKG_CHECK_MODULES([SDBUSPLUS], [sdbusplus])
 PKG_CHECK_MODULES([SDEVENTPLUS], [sdeventplus])
+PKG_CHECK_MODULES([JSMN], [jsmn])
 PKG_CHECK_MODULES([PHOSPHOR_LOGGING], [phosphor-logging])
 
 # Make it possible for users to choose if they want test support
