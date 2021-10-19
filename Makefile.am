@@ -63,3 +63,7 @@ check_PROGRAMS =
 XFAIL_TESTS =
 
 TESTS = $(check_PROGRAMS)
+
+if ACF_CERT_EXTENSION
+SUBDIRS += bmc-acf
+endif

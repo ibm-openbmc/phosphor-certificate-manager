@@ -14,6 +14,7 @@ AC_PROG_MAKE_SET
 
 # Checks for library functions
 LT_INIT # Required for systemd linking
+AM_CONDITIONAL(HAVE_SYSTEMD, [test -n "$with_systemdsystemunitdir" -a "x$with_systemdsystemunitdir" != xno ])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AX_CXX_COMPILE_STDCXX([17], [noext], [mandatory])
@@ -48,6 +49,7 @@ AC_CHECK_HEADER(experimental/filesystem, [],
 PKG_CHECK_MODULES([PHOSPHOR_DBUS_INTERFACES], [phosphor-dbus-interfaces])
 PKG_CHECK_MODULES([SDBUSPLUS], [sdbusplus])
 PKG_CHECK_MODULES([SDEVENTPLUS], [sdeventplus])
+PKG_CHECK_MODULES([JSMN], [jsmn])
 PKG_CHECK_MODULES([PHOSPHOR_LOGGING], [phosphor-logging])
 
 # Make it possible for users to choose if they want test support
