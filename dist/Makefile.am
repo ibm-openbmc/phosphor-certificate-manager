@@ -11,6 +11,10 @@ dbuspolicy_DATA += busconfig/bmc-vmi-ca.conf
 systemdsystemunit_DATA += bmc-vmi-ca-manager.service
 endif
 
+if ACF_CERT_EXTENSION
+systemdsystemunit_DATA += bmc-acf-manager.service
+endif
+
 if ENABLE_BMCWEB_CERT_CONFIG
 dbuspolicy_DATA += busconfig/phosphor-bmcweb-cert-config.conf
 certmgrenv_DATA += env/bmcweb

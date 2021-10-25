@@ -4,11 +4,6 @@ bin_PROGRAMS = \
 noinst_HEADERS = \
 	acf_manager.hpp
 
-if HAVE_SYSTEMD
-systemdsystemunit_DATA = \
-	bmc-acf-manager.service
-endif
-
 bmc_acf_SOURCES = \
 	mainapp.cpp \
 	acf_manager.cpp
