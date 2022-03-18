@@ -276,11 +276,13 @@ static CeLogin::CeLoginRc
             }
             else
             {
+                sRc = CeLogin::CeLoginRc::AcfExpired;
                 log<level::ERR>("ACF time expired");
             }
         }
         else
         {
+            sRc = CeLogin::CeLoginRc::SerialNumberMismatch;
             log<level::ERR>("Serial Number does not match");
         }
     }
@@ -586,6 +588,11 @@ std::tuple<std::vector<uint8_t>, bool, std::string> ACFCertMgr::getACFInfo(void)
                 elog<InternalFailure>();
             }
         }
+    }
+
+    if (sRc != CeLogin::CeLoginRc::Success)
+    {
+        isAcfInstalled = false;
     }
 
     return std::make_tuple(accessControlFile, isAcfInstalled, sDate);
