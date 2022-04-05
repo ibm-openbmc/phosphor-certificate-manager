@@ -24,7 +24,7 @@ namespace fs = std::filesystem;
 
 CSR::CSR(sdbusplus::bus::bus& bus, const char* path,
          CertInstallPath&& installPath, const Status& status) :
-    CSRIface(bus, path, true),
+    CSRIface(bus, path, CSRIface::action::defer_emit),
     bus(bus), objectPath(path), certInstallPath(std::move(installPath)),
     csrStatus(status)
 {

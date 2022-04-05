@@ -46,7 +46,7 @@ class Entry : public Ifaces
     Entry(sdbusplus::bus::bus& bus, const std::string& objPath,
           uint32_t entryId, std::string& csr, std::string& cert,
           CACertMgr& manager) :
-        Ifaces(bus, objPath.c_str(), true),
+        Ifaces(bus, objPath.c_str(), Ifaces::action::defer_emit),
         bus(bus), id(entryId), manager(manager)
 
     {
