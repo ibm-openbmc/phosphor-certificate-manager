@@ -44,6 +44,8 @@ constexpr auto ACF_FILE_PATH = "/etc/acf/service.acf";
 constexpr auto PROD_PUB_KEY_FILE_PATH = "/srv/ibm-acf/ibmacf-prod.key";
 constexpr auto PROD_BACKUP_PUB_KEY_FILE_PATH =
     "/srv/ibm-acf/ibmacf-prod-backup.key";
+constexpr auto PROD_BACKUP2_PUB_KEY_FILE_PATH =
+    "/srv/ibm-acf/ibmacf-prod-backup2.key";
 constexpr auto DEV_PUB_KEY_FILE_PATH = "/srv/ibm-acf/ibmacf-dev.key";
 constexpr auto DBUS_INVENTORY_SYSTEM_OBJECT =
     "/xyz/openbmc_project/inventory/system";
@@ -351,11 +353,14 @@ acf_info ACFCertMgr::installACF(std::vector<uint8_t> accessControlFile)
     bool prodKeyExists = false;
     bool devKeyExists = false;
     bool prodBackupKeyExists = false;
+    bool prodBackup2KeyExists = false;
     try
     {
         prodKeyExists = std::filesystem::exists(PROD_PUB_KEY_FILE_PATH);
         prodBackupKeyExists =
             std::filesystem::exists(PROD_BACKUP_PUB_KEY_FILE_PATH);
+        prodBackup2KeyExists =
+            std::filesystem::exists(PROD_BACKUP2_PUB_KEY_FILE_PATH);
         devKeyExists = std::filesystem::exists(DEV_PUB_KEY_FILE_PATH);
     }
     catch (const std::filesystem::filesystem_error& e)
@@ -397,7 +402,21 @@ acf_info ACFCertMgr::installACF(std::vector<uint8_t> accessControlFile)
         }
         else
         {
-            log<level::ERR>("cannot read production key file");
+            log<level::ERR>("cannot read production backup key file");
+            elog<InternalFailure>();
+        }
+    }
+    if (prodBackup2KeyExists && sRc != CeLogin::CeLoginRc::Success)
+    {
+        std::vector<uint8_t> sPublicKeyFile;
+        if (readBinaryFile(PROD_BACKUP2_PUB_KEY_FILE_PATH, sPublicKeyFile))
+        {
+            sRc = verifyAcfSerialNumberAndExpiration(accessControlFile,
+                                                     sPublicKeyFile, sDate);
+        }
+        else
+        {
+            log<level::ERR>("cannot read production backup2 key file");
             elog<InternalFailure>();
         }
     }
