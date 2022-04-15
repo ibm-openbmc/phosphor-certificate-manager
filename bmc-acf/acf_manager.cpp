@@ -370,9 +370,9 @@ acf_info ACFCertMgr::installACF(std::vector<uint8_t> accessControlFile)
     }
 
     // This should never occur
-    if (!((prodKeyExists || devKeyExists || prodBackupKeyExists)))
+    if (!((prodKeyExists || devKeyExists || prodBackupKeyExists || prodBackup2KeyExists)))
     {
-        log<level::ERR>("Neither prod or dev key exist. This shouldn't happen");
+        log<level::ERR>("No usable keys exist. This shouldn't happen");
         elog<InternalFailure>();
     }
 
@@ -392,7 +392,7 @@ acf_info ACFCertMgr::installACF(std::vector<uint8_t> accessControlFile)
             elog<InternalFailure>();
         }
     }
-    if (prodBackupKeyExists && sRc != CeLogin::CeLoginRc::Success)
+    if (prodBackupKeyExists && (sRc != CeLogin::CeLoginRc::Success))
     {
         std::vector<uint8_t> sPublicKeyFile;
         if (readBinaryFile(PROD_BACKUP_PUB_KEY_FILE_PATH, sPublicKeyFile))
@@ -406,7 +406,7 @@ acf_info ACFCertMgr::installACF(std::vector<uint8_t> accessControlFile)
             elog<InternalFailure>();
         }
     }
-    if (prodBackup2KeyExists && sRc != CeLogin::CeLoginRc::Success)
+    if (prodBackup2KeyExists && (sRc != CeLogin::CeLoginRc::Success))
     {
         std::vector<uint8_t> sPublicKeyFile;
         if (readBinaryFile(PROD_BACKUP2_PUB_KEY_FILE_PATH, sPublicKeyFile))
