@@ -169,7 +169,7 @@ Certificate::Certificate(sdbusplus::bus::bus& bus, const std::string& objPath,
                          const CertInstallPath& installPath,
                          const CertUploadPath& uploadPath,
                          const CertWatchPtr& certWatchPtr, Manager& parent) :
-    CertIfaces(bus, objPath.c_str(), true),
+    CertIfaces(bus, objPath.c_str(), CertIfaces::action::defer_emit),
     bus(bus), objectPath(objPath), certType(type), certInstallPath(installPath),
     certWatchPtr(certWatchPtr), manager(parent)
 {
@@ -506,7 +506,7 @@ void Certificate::populateProperties(const std::string& certPath)
     BUF_MEM* buf = certBuf.get();
     BIO_get_mem_ptr(certBio.get(), &buf);
     std::string certStr(buf->data, buf->length);
-    CertificateIface::certificateString(certStr);
+    certificateString(certStr);
 
     static const int maxKeySize = 4096;
     char subBuffer[maxKeySize] = {0};
@@ -515,7 +515,7 @@ void Certificate::populateProperties(const std::string& certPath)
     X509_NAME* sub = X509_get_subject_name(cert.get());
     X509_NAME_print_ex(subBio.get(), sub, 0, XN_FLAG_SEP_COMMA_PLUS);
     BIO_read(subBio.get(), subBuffer, maxKeySize);
-    CertificateIface::subject(subBuffer);
+    subject(subBuffer);
 
     char issuerBuffer[maxKeySize] = {0};
     BIO_MEM_Ptr issuerBio(BIO_new(BIO_s_mem()), BIO_free);
@@ -523,7 +523,7 @@ void Certificate::populateProperties(const std::string& certPath)
     X509_NAME* issuer_name = X509_get_issuer_name(cert.get());
     X509_NAME_print_ex(issuerBio.get(), issuer_name, 0, XN_FLAG_SEP_COMMA_PLUS);
     BIO_read(issuerBio.get(), issuerBuffer, maxKeySize);
-    CertificateIface::issuer(issuerBuffer);
+    issuer(issuerBuffer);
 
     std::vector<std::string> keyUsageList;
     ASN1_BIT_STRING* usage;
@@ -556,7 +556,7 @@ void Certificate::populateProperties(const std::string& certPath)
                 sk_ASN1_OBJECT_value(extUsage, i))]);
         }
     }
-    CertificateIface::keyUsage(keyUsageList);
+    keyUsage(keyUsageList);
 
     int days = 0;
     int secs = 0;
@@ -568,11 +568,11 @@ void Certificate::populateProperties(const std::string& certPath)
     static const uint32_t dayToSeconds = 24 * 60 * 60;
     ASN1_TIME* notAfter = X509_get_notAfter(cert.get());
     ASN1_TIME_diff(&days, &secs, epoch.get(), notAfter);
-    CertificateIface::validNotAfter((days * dayToSeconds) + secs);
+    validNotAfter((days * dayToSeconds) + secs);
 
     ASN1_TIME* notBefore = X509_get_notBefore(cert.get());
     ASN1_TIME_diff(&days, &secs, epoch.get(), notBefore);
-    CertificateIface::validNotBefore((days * dayToSeconds) + secs);
+    validNotBefore((days * dayToSeconds) + secs);
 }
 
 X509_Ptr Certificate::loadCert(const std::string& filePath)
