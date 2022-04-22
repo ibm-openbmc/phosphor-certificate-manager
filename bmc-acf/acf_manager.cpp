@@ -42,7 +42,8 @@ using Reason = xyz::openbmc_project::Certs::InvalidCertificate::REASON;
 
 constexpr auto ACF_FILE_PATH = "/etc/acf/service.acf";
 constexpr auto PROD_PUB_KEY_FILE_PATH = "/srv/ibm-acf/ibmacf-prod.key";
-constexpr auto PROD_BACKUP_PUB_KEY_FILE_PATH = "/srv/ibm-acf/ibmacf-prod-backup.key";
+constexpr auto PROD_BACKUP_PUB_KEY_FILE_PATH =
+    "/srv/ibm-acf/ibmacf-prod-backup.key";
 constexpr auto DEV_PUB_KEY_FILE_PATH = "/srv/ibm-acf/ibmacf-dev.key";
 constexpr auto DBUS_INVENTORY_SYSTEM_OBJECT =
     "/xyz/openbmc_project/inventory/system";
@@ -352,7 +353,8 @@ acf_info ACFCertMgr::installACF(std::vector<uint8_t> accessControlFile)
     try
     {
         prodKeyExists = std::filesystem::exists(PROD_PUB_KEY_FILE_PATH);
-        prodBackupKeyExists = std::filesystem::exists(PROD_BACKUP_PUB_KEY_FILE_PATH);
+        prodBackupKeyExists =
+            std::filesystem::exists(PROD_BACKUP_PUB_KEY_FILE_PATH);
         devKeyExists = std::filesystem::exists(DEV_PUB_KEY_FILE_PATH);
     }
     catch (const std::filesystem::filesystem_error& e)
@@ -470,7 +472,8 @@ std::tuple<std::vector<uint8_t>, bool, std::string> ACFCertMgr::getACFInfo(void)
     {
         isAcfInstalled = std::filesystem::exists(ACF_FILE_PATH);
         prodKeyExists = std::filesystem::exists(PROD_PUB_KEY_FILE_PATH);
-        prodBackupKeyExists = std::filesystem::exists(PROD_BACKUP_PUB_KEY_FILE_PATH);
+        prodBackupKeyExists =
+            std::filesystem::exists(PROD_BACKUP_PUB_KEY_FILE_PATH);
         devKeyExists = std::filesystem::exists(DEV_PUB_KEY_FILE_PATH);
     }
     catch (const std::filesystem::filesystem_error& e)
@@ -480,7 +483,8 @@ std::tuple<std::vector<uint8_t>, bool, std::string> ACFCertMgr::getACFInfo(void)
     }
 
     // ACF and production or development key should exist otherwise exit
-    if (!((prodKeyExists || devKeyExists || prodBackupKeyExists ) && isAcfInstalled))
+    if (!((prodKeyExists || devKeyExists || prodBackupKeyExists) &&
+          isAcfInstalled))
     {
         // Returns empty data as file is not installed
         return std::make_tuple(accessControlFile, isAcfInstalled, sDate);
