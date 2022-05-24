@@ -485,6 +485,7 @@ std::tuple<std::vector<uint8_t>, bool, std::string> ACFCertMgr::getACFInfo(void)
     bool prodKeyExists = false;
     bool devKeyExists = false;
     bool prodBackupKeyExists = false;
+    bool prodBackup2KeyExists = false;
     std::string sDate;
     CeLogin::CeLoginRc sRc = CeLogin::CeLoginRc::Failure;
     std::vector<uint8_t> accessControlFile;
@@ -495,6 +496,8 @@ std::tuple<std::vector<uint8_t>, bool, std::string> ACFCertMgr::getACFInfo(void)
         prodKeyExists = std::filesystem::exists(PROD_PUB_KEY_FILE_PATH);
         prodBackupKeyExists =
             std::filesystem::exists(PROD_BACKUP_PUB_KEY_FILE_PATH);
+        prodBackup2KeyExists =
+            std::filesystem::exists(PROD_BACKUP2_PUB_KEY_FILE_PATH);
         devKeyExists = std::filesystem::exists(DEV_PUB_KEY_FILE_PATH);
     }
     catch (const std::filesystem::filesystem_error& e)
@@ -504,8 +507,8 @@ std::tuple<std::vector<uint8_t>, bool, std::string> ACFCertMgr::getACFInfo(void)
     }
 
     // ACF and production or development key should exist otherwise exit
-    if (!((prodKeyExists || devKeyExists || prodBackupKeyExists ) &&
-          isAcfInstalled))
+    if (!((prodKeyExists || devKeyExists || prodBackupKeyExists ||
+           prodBackup2KeyExists) && isAcfInstalled))
     {
         // Returns empty data as file is not installed
         return std::make_tuple(accessControlFile, isAcfInstalled, sDate);
@@ -543,7 +546,22 @@ std::tuple<std::vector<uint8_t>, bool, std::string> ACFCertMgr::getACFInfo(void)
         }
         else
         {
-            log<level::ERR>("cannot read production key file");
+            log<level::ERR>("cannot read production backup key file");
+            elog<InternalFailure>();
+        }
+    }
+
+    if (prodBackup2KeyExists && sRc != CeLogin::CeLoginRc::Success)
+    {
+        std::vector<uint8_t> sPublicKeyFile;
+        if (readBinaryFile(PROD_BACKUP2_PUB_KEY_FILE_PATH, sPublicKeyFile))
+        {
+            sRc = verifyAcfSerialNumberAndExpiration(accessControlFile,
+                                                     sPublicKeyFile, sDate);
+        }
+        else
+        {
+            log<level::ERR>("cannot read production backup2 key file");
             elog<InternalFailure>();
         }
     }
