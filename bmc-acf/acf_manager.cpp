@@ -508,7 +508,8 @@ std::tuple<std::vector<uint8_t>, bool, std::string> ACFCertMgr::getACFInfo(void)
 
     // ACF and production or development key should exist otherwise exit
     if (!((prodKeyExists || devKeyExists || prodBackupKeyExists ||
-           prodBackup2KeyExists) && isAcfInstalled))
+           prodBackup2KeyExists) &&
+          isAcfInstalled))
     {
         // Returns empty data as file is not installed
         return std::make_tuple(accessControlFile, isAcfInstalled, sDate);
