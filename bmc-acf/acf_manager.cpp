@@ -370,7 +370,8 @@ acf_info ACFCertMgr::installACF(std::vector<uint8_t> accessControlFile)
     }
 
     // This should never occur
-    if (!((prodKeyExists || devKeyExists || prodBackupKeyExists || prodBackup2KeyExists)))
+    if (!((prodKeyExists || devKeyExists || prodBackupKeyExists ||
+           prodBackup2KeyExists)))
     {
         log<level::ERR>("No usable keys exist. This shouldn't happen");
         elog<InternalFailure>();
@@ -503,7 +504,7 @@ std::tuple<std::vector<uint8_t>, bool, std::string> ACFCertMgr::getACFInfo(void)
     }
 
     // ACF and production or development key should exist otherwise exit
-    if (!((prodKeyExists || devKeyExists || prodBackupKeyExists) &&
+    if (!((prodKeyExists || devKeyExists || prodBackupKeyExists ) &&
           isAcfInstalled))
     {
         // Returns empty data as file is not installed
