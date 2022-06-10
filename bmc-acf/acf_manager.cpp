@@ -44,6 +44,8 @@ constexpr auto ACF_FILE_PATH = "/etc/acf/service.acf";
 constexpr auto PROD_PUB_KEY_FILE_PATH = "/srv/ibm-acf/ibmacf-prod.key";
 constexpr auto PROD_BACKUP_PUB_KEY_FILE_PATH =
     "/srv/ibm-acf/ibmacf-prod-backup.key";
+constexpr auto PROD_BACKUP2_PUB_KEY_FILE_PATH =
+    "/srv/ibm-acf/ibmacf-prod-backup2.key";
 constexpr auto DEV_PUB_KEY_FILE_PATH = "/srv/ibm-acf/ibmacf-dev.key";
 constexpr auto DBUS_INVENTORY_SYSTEM_OBJECT =
     "/xyz/openbmc_project/inventory/system";
@@ -351,11 +353,14 @@ acf_info ACFCertMgr::installACF(std::vector<uint8_t> accessControlFile)
     bool prodKeyExists = false;
     bool devKeyExists = false;
     bool prodBackupKeyExists = false;
+    bool prodBackup2KeyExists = false;
     try
     {
         prodKeyExists = std::filesystem::exists(PROD_PUB_KEY_FILE_PATH);
         prodBackupKeyExists =
             std::filesystem::exists(PROD_BACKUP_PUB_KEY_FILE_PATH);
+        prodBackup2KeyExists =
+            std::filesystem::exists(PROD_BACKUP2_PUB_KEY_FILE_PATH);
         devKeyExists = std::filesystem::exists(DEV_PUB_KEY_FILE_PATH);
     }
     catch (const std::filesystem::filesystem_error& e)
@@ -365,9 +370,10 @@ acf_info ACFCertMgr::installACF(std::vector<uint8_t> accessControlFile)
     }
 
     // This should never occur
-    if (!((prodKeyExists || devKeyExists || prodBackupKeyExists)))
+    if (!((prodKeyExists || devKeyExists || prodBackupKeyExists ||
+           prodBackup2KeyExists)))
     {
-        log<level::ERR>("Neither prod or dev key exist. This shouldn't happen");
+        log<level::ERR>("No usable keys exist. This shouldn't happen");
         elog<InternalFailure>();
     }
 
@@ -387,7 +393,7 @@ acf_info ACFCertMgr::installACF(std::vector<uint8_t> accessControlFile)
             elog<InternalFailure>();
         }
     }
-    if (prodBackupKeyExists && sRc != CeLogin::CeLoginRc::Success)
+    if (prodBackupKeyExists && (sRc != CeLogin::CeLoginRc::Success))
     {
         std::vector<uint8_t> sPublicKeyFile;
         if (readBinaryFile(PROD_BACKUP_PUB_KEY_FILE_PATH, sPublicKeyFile))
@@ -397,7 +403,21 @@ acf_info ACFCertMgr::installACF(std::vector<uint8_t> accessControlFile)
         }
         else
         {
-            log<level::ERR>("cannot read production key file");
+            log<level::ERR>("cannot read production backup key file");
+            elog<InternalFailure>();
+        }
+    }
+    if (prodBackup2KeyExists && (sRc != CeLogin::CeLoginRc::Success))
+    {
+        std::vector<uint8_t> sPublicKeyFile;
+        if (readBinaryFile(PROD_BACKUP2_PUB_KEY_FILE_PATH, sPublicKeyFile))
+        {
+            sRc = verifyAcfSerialNumberAndExpiration(accessControlFile,
+                                                     sPublicKeyFile, sDate);
+        }
+        else
+        {
+            log<level::ERR>("cannot read production backup2 key file");
             elog<InternalFailure>();
         }
     }
@@ -465,6 +485,7 @@ std::tuple<std::vector<uint8_t>, bool, std::string> ACFCertMgr::getACFInfo(void)
     bool prodKeyExists = false;
     bool devKeyExists = false;
     bool prodBackupKeyExists = false;
+    bool prodBackup2KeyExists = false;
     std::string sDate;
     CeLogin::CeLoginRc sRc = CeLogin::CeLoginRc::Failure;
     std::vector<uint8_t> accessControlFile;
@@ -475,6 +496,8 @@ std::tuple<std::vector<uint8_t>, bool, std::string> ACFCertMgr::getACFInfo(void)
         prodKeyExists = std::filesystem::exists(PROD_PUB_KEY_FILE_PATH);
         prodBackupKeyExists =
             std::filesystem::exists(PROD_BACKUP_PUB_KEY_FILE_PATH);
+        prodBackup2KeyExists =
+            std::filesystem::exists(PROD_BACKUP2_PUB_KEY_FILE_PATH);
         devKeyExists = std::filesystem::exists(DEV_PUB_KEY_FILE_PATH);
     }
     catch (const std::filesystem::filesystem_error& e)
@@ -484,7 +507,8 @@ std::tuple<std::vector<uint8_t>, bool, std::string> ACFCertMgr::getACFInfo(void)
     }
 
     // ACF and production or development key should exist otherwise exit
-    if (!((prodKeyExists || devKeyExists || prodBackupKeyExists) &&
+    if (!((prodKeyExists || devKeyExists || prodBackupKeyExists ||
+           prodBackup2KeyExists) &&
           isAcfInstalled))
     {
         // Returns empty data as file is not installed
@@ -523,7 +547,22 @@ std::tuple<std::vector<uint8_t>, bool, std::string> ACFCertMgr::getACFInfo(void)
         }
         else
         {
-            log<level::ERR>("cannot read production key file");
+            log<level::ERR>("cannot read production backup key file");
+            elog<InternalFailure>();
+        }
+    }
+
+    if (prodBackup2KeyExists && sRc != CeLogin::CeLoginRc::Success)
+    {
+        std::vector<uint8_t> sPublicKeyFile;
+        if (readBinaryFile(PROD_BACKUP2_PUB_KEY_FILE_PATH, sPublicKeyFile))
+        {
+            sRc = verifyAcfSerialNumberAndExpiration(accessControlFile,
+                                                     sPublicKeyFile, sDate);
+        }
+        else
+        {
+            log<level::ERR>("cannot read production backup2 key file");
             elog<InternalFailure>();
         }
     }
