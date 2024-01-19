@@ -28,8 +28,8 @@
 #include <fstream>
 #include <phosphor-logging/elog-errors.hpp>
 #include <phosphor-logging/elog.hpp>
-#include <phosphor-logging/log.hpp>
 #include <phosphor-logging/lg2.hpp>
+#include <phosphor-logging/log.hpp>
 #include <sdbusplus/bus.hpp>
 #include <sdbusplus/exception.hpp>
 #include <sdbusplus/message.hpp>
