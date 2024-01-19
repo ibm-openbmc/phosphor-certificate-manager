@@ -28,8 +28,8 @@
 #include <fstream>
 #include <phosphor-logging/elog-errors.hpp>
 #include <phosphor-logging/elog.hpp>
-#include <phosphor-logging/log.hpp>
 #include <phosphor-logging/lg2.hpp>
+#include <phosphor-logging/log.hpp>
 #include <sdbusplus/bus.hpp>
 #include <sdbusplus/exception.hpp>
 #include <sdbusplus/message.hpp>
@@ -627,7 +627,9 @@ void Manager::generateCSRHelper(
         std::string altNameStr{};
         for (auto& name : alternativeNames)
         {
-            altNameStr += std::format("DNS:{} ", name.data());
+            std::ostringstream stream;
+            stream << "DNS:" << name.data() << " ";
+            altNameStr += stream.str();
         }
         X509_EXTENSION* ext = X509V3_EXT_conf_nid(
             NULL, NULL, NID_subject_alt_name, altNameStr.data());
