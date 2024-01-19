@@ -1,11 +1,12 @@
 #include <acf_manager.hpp>
-#include <filesystem>
 #include <phosphor-logging/elog-errors.hpp>
 #include <phosphor-logging/elog.hpp>
 #include <phosphor-logging/log.hpp>
 #include <tacf.hpp>
-#include <vector>
 #include <xyz/openbmc_project/Certs/error.hpp>
+
+#include <filesystem>
+#include <vector>
 
 namespace acf
 {
@@ -89,8 +90,8 @@ acf_info ACFCertMgr::installACF(std::vector<uint8_t> accessControlFile)
     Tacf tacf{[](std::string msg) {
         log<phosphor::logging::level::INFO>(msg.c_str());
     }};
-    int rc =
-        tacf.install(accessControlFile.data(), accessControlFile.size(), sDate);
+    int rc = tacf.install(accessControlFile.data(), accessControlFile.size(),
+                          sDate);
     if (rc)
     {
         log<level::INFO>("ACF install failed");

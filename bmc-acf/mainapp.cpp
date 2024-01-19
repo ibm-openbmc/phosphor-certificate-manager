@@ -3,6 +3,7 @@
 #include "acf_manager.hpp"
 
 #include <sdeventplus/event.hpp>
+
 #include <string>
 
 int main(int /*argc*/, char** /*argv*/)
