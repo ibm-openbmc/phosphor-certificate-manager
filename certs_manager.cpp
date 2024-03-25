@@ -28,8 +28,8 @@
 #include <fstream>
 #include <phosphor-logging/elog-errors.hpp>
 #include <phosphor-logging/elog.hpp>
-#include <phosphor-logging/log.hpp>
 #include <phosphor-logging/lg2.hpp>
+#include <phosphor-logging/log.hpp>
 #include <sdbusplus/bus.hpp>
 #include <sdbusplus/exception.hpp>
 #include <sdbusplus/message.hpp>
@@ -559,16 +559,7 @@ void Manager::generateCSRHelper(
 {
     int ret = 0;
 
-    // set version of x509 req
-    int nVersion = 3;
-    // TODO: Issue#6 need to make version number configurable
     X509ReqPtr x509Req(X509_REQ_new(), ::X509_REQ_free);
-    ret = X509_REQ_set_version(x509Req.get(), nVersion);
-    if (ret == 0)
-    {
-        log<level::ERR>("Error occurred during X509_REQ_set_version call");
-        elog<InternalFailure>();
-    }
 
     // set subject of x509 req
     X509_NAME* x509Name = X509_REQ_get_subject_name(x509Req.get());
