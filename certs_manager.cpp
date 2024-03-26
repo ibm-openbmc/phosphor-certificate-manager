@@ -342,7 +342,7 @@ void Manager::generateCSRHelper(
 {
     int ret = 0;
 
-    X509ReqPtr x509Req(X509_REQ_new(), ::X509_REQ_free);
+    X509_REQ_Ptr x509Req(X509_REQ_new(), ::X509_REQ_free);
 
     // set subject of x509 req
     X509_NAME* x509Name = X509_REQ_get_subject_name(x509Req.get());
