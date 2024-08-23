@@ -410,15 +410,17 @@ void Manager::generateCSRHelper(
     // set subjectAltName extension
     if (!alternativeNames.empty())
     {
-        std::string altNameStr{};
-        for (auto& name : alternativeNames)
+        std::ostringstream oss;
+        for (size_t i = 0; i < alternativeNames.size(); ++i)
         {
-            std::ostringstream stream;
-            stream << "DNS:" << name.data() << " ";
-            altNameStr += stream.str();
+            oss << "DNS:" << alternativeNames[i];
+            if (i < alternativeNames.size() - 1)
+            {
+                oss << ","; // Add a comma except after the last element
+            }
         }
         X509_EXTENSION* ext = X509V3_EXT_conf_nid(
-            NULL, NULL, NID_subject_alt_name, altNameStr.data());
+            NULL, NULL, NID_subject_alt_name, (oss.str()).c_str());
         if (ext == nullptr)
         {
             log<level::ERR>("Error creating subjectAltName extension");
