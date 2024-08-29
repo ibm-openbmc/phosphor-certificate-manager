@@ -19,6 +19,7 @@
 #include <phosphor-logging/log.hpp>
 #include <xyz/openbmc_project/Certs/error.hpp>
 #include <xyz/openbmc_project/Common/error.hpp>
+#include <xyz/openbmc_project/Logging/Entry/server.hpp>
 
 namespace phosphor::certs
 {
@@ -30,8 +31,10 @@ using ::phosphor::logging::elog;
 using ::phosphor::logging::entry;
 using ::phosphor::logging::level;
 using ::phosphor::logging::log;
+using ::phosphor::logging::report;
 using ::sdbusplus::xyz::openbmc_project::Certs::Error::InvalidCertificate;
 using ::sdbusplus::xyz::openbmc_project::Common::Error::InternalFailure;
+using ::sdbusplus::xyz::openbmc_project::Logging::server;
 using Reason = ::phosphor::logging::xyz::openbmc_project::Certs::
     InvalidCertificate::REASON;
 
@@ -197,14 +200,25 @@ void validateCertificateAgainstStore(X509_STORE& x509Store, X509& cert)
     {
         if (errCode == X509_V_ERR_CERT_HAS_EXPIRED)
         {
-            log<level::ERR>("Expired certificate ");
-            elog<InvalidCertificate>(Reason("Expired Certificate"));
+            bool selfSigned = isSelfSigned(cert);
+            if (selfSigned)
+            {
+                report<InvalidCertificate>(Entry::Level::Informational, Reason("self signed certificate"));
+            }
+            else
+            {
+                report<InvalidCertificate>(Reason("Expired Certificate"));
+            }
         }
-        // Loging general error here.
-        log<level::ERR>(
-            "Certificate validation failed", entry("ERRCODE=%d", errCode),
-            entry("ERROR_STR=%s", X509_verify_cert_error_string(errCode)));
-        elog<InvalidCertificate>(Reason("Certificate validation failed"));
+        else
+        {
+            // Loging general error here.
+            log<level::ERR>(
+                "Certificate validation failed", entry("ERRCODE=%d", errCode),
+                entry("ERROR_STR=%s", X509_verify_cert_error_string(errCode)));
+            report<InvalidCertificate>(Reason("Certificate validation failed"));
+        }
+        throw std::runtime_error("InvalidCertificate: Expired Certificate");
     }
 }
 
@@ -259,4 +273,19 @@ std::unique_ptr<X509, decltype(&::X509_free)> parseCert(const std::string& pem)
     }
     return cert;
 }
+
+bool isSelfSigned(X509& cert)
+{
+    X509_NAME* subject = X509_get_subject_name(&cert);
+    X509_NAME* issuer = X509_get_issuer_name(&cert);
+    if (X509_NAME_cmp(subject, issuer) == 0)
+    {
+        return true; // Certificate is self-signed
+    }
+    else
+    {
+        return false; // Certificate is not self-signed
+    }
+}
+
 } // namespace phosphor::certs

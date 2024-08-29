@@ -63,4 +63,9 @@ std::string generateCertId(X509& cert);
  *  @return pointer to the X509 structure.
  */
 std::unique_ptr<X509, decltype(&::X509_free)> parseCert(const std::string& pem);
+
+/** @brief Checks if its self signed certificate.
+ *  @return bool to indicate whether it's self signed certificate.
+ */
+bool isSelfSigned(X509& cert);
 } // namespace phosphor::certs
