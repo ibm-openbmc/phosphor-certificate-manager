@@ -1009,10 +1009,9 @@ void Manager::createCertificates()
         {
             report<InternalFailure>();
         }
-        catch (const InvalidCertificate& e)
+        catch (const std::runtime_error&)
         {
-            report<InvalidCertificate>(InvalidCertificateReason(
-                "Existing certificate file is corrupted"));
+            // do nothing, errorlog already created
         }
     }
 }
