@@ -59,6 +59,7 @@ constexpr auto DBUS_FIELDMODE_INTERFACE =
     "xyz.openbmc_project.Control.FieldMode";
 constexpr auto DBUS_FIELD_MODE_PROP = "FieldModeEnabled";
 const int FAILURE = -1;
+constexpr auto serviceName = "service";
 
 /** @brief Implementation for readBinaryFile
  *  Read file contents into buffer
@@ -195,6 +196,92 @@ static int readFieldModeProperty(const std::string& obj, const std::string& inf,
     }
 
     return (int)propBool;
+}
+
+/**
+ * Write a property stored as a dbus property.
+ * @brief Set a property.
+ *
+ * @param service   Service hosting the object and interface.
+ * @param path      Path of the dbus object hosting the interface.
+ * @param interface Interface for accessing the property.
+ * @param property  Property to access.
+ * @param message   Value to set.
+ *
+ * @return A non-zero error value or zero on success.
+ */
+int dbusSetProperty(std::string service, std::string path,
+                    std::string interface, std::string property,
+                    std::variant<bool>& message)
+
+{
+    try
+    {
+        // Craft the dbus method for writing the specified property.
+        auto bus = sdbusplus::bus::new_system();
+        auto method =
+            bus.new_method_call(service.c_str(), path.c_str(),
+                                "org.freedesktop.DBus.Properties", "Set");
+        method.append(interface.c_str(), property.c_str(), message);
+
+        auto response = bus.call(method);
+    }
+    catch (const std::exception& e)
+    {
+        return 1;
+    }
+
+    return 0;
+}
+
+/**
+ * Unlock a users login acount using dbus interface.
+ * @brief Unlock user login account.
+ *
+ * @param userName  Name of the user account to unlock
+ * @param state     State value to set
+ *
+ * @return A non-zero error value or zero on success.
+ */
+static int unlockUser(const std::string& userName, bool state = false)
+{
+    // Target the appropriate user
+    sdbusplus::message::object_path userPath("/xyz/openbmc_project/user");
+    userPath /= userName;
+    std::string propertyPath(userPath);
+
+    // PropertyVariant message = state;
+    std::variant<bool> message(state);
+
+    // Set the property
+    return dbusSetProperty("xyz.openbmc_project.User.Manager", propertyPath,
+                           "xyz.openbmc_project.User.Attributes",
+                           "UserLockedForFailedAttempt", message);
+}
+
+/**
+ * Enable or disable a users login acount using dbus interface.
+ * @brief Enable user login account.
+ *
+ * @param userName  Name of the user account to enable
+ * @param state     State value to set
+ *
+ * @return A non-zero error value or zero on success.
+ */
+static int enableUser(const std::string& userName, bool state = true)
+{
+    // Target the appropriate user
+    sdbusplus::message::object_path userPath("/xyz/openbmc_project/user");
+    userPath /= userName;
+    std::string propertyPath(userPath);
+
+    // PropertyVariant message = state;
+    std::variant<bool> message(state);
+
+    // Set the property
+    return dbusSetProperty("xyz.openbmc_project.User.Manager", propertyPath,
+                           "xyz.openbmc_project.User.Attributes", "UserEnabled",
+                           message);
 }
 
 /** @brief Implementation for verifyAcfSerialNumberAndExpiration
@@ -468,6 +555,12 @@ acf_info ACFCertMgr::installACF(std::vector<uint8_t> accessControlFile)
             log<level::ERR>("Copying acf file to destination failed");
             elog<InternalFailure>();
         }
+
+        // Enable the service user account using dbus interface.
+        enableUser(serviceName);
+
+        // Unlock service user account using dbus interface.
+        unlockUser(serviceName);
     }
     else
     {
