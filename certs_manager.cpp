@@ -757,12 +757,6 @@ void Manager::generateCSRHelper(
             elog<InternalFailure>();
         }
     }
-
-    else
-    {
-        lg2::error("Empty string is not allowed in SubjectAltNAme");
-        throw InternalFailure();
-    }
     ret = X509_REQ_set_pubkey(x509Req.get(), pKey.get());
     if (ret == 0)
     {
