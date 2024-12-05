@@ -1,7 +1,7 @@
 #include <acf_manager.hpp>
 #include <phosphor-logging/elog-errors.hpp>
 #include <phosphor-logging/elog.hpp>
-#include <phosphor-logging/log.hpp>
+#include <phosphor-logging/lg2.hpp>
 #include <tacf.hpp>
 #include <xyz/openbmc_project/Certs/error.hpp>
 
@@ -87,15 +87,12 @@ acf_info ACFCertMgr::installACF(std::vector<uint8_t> accessControlFile)
         return std::make_tuple(accessControlFile, acfInstalled(), sDate);
     }
     // Verify and install ACF and get expiration date.
-    Tacf tacf{[](std::string msg) {
-        log<phosphor::logging::level::INFO>(msg.c_str());
-    }};
+    Tacf tacf{[](std::string msg) { lg2::info("Note: {MSG}", "MSG", msg); }};
     int rc = tacf.install(accessControlFile.data(), accessControlFile.size(),
                           sDate);
     if (rc)
     {
-        log<level::INFO>("ACF install failed");
-        log<level::ERR>("Error: ", entry("rc=%0x", rc));
+        lg2::error("Error: ACF install failed, rc={RC}", "RC", lg2::hex, rc);
         elog<InvalidCertificate>(Reason("ACF validation failed"));
     }
 
@@ -109,20 +106,18 @@ std::tuple<std::vector<uint8_t>, bool, std::string> ACFCertMgr::getACFInfo(void)
 
     if (!readBinaryFile(ACF_FILE_PATH, accessControlFile))
     {
-        log<level::ERR>("ACF not installed or not readable");
+        lg2::error("ACF not installed or not readable");
     }
     else
     {
         // Verify ACF and get expiration date.
-        Tacf tacf{[](std::string msg) {
-            log<phosphor::logging::level::INFO>(msg.c_str());
-        }};
+        Tacf tacf{
+            [](std::string msg) { lg2::info("Note: {MSG}", "MSG", msg); }};
         int rc = tacf.verify(accessControlFile.data(), accessControlFile.size(),
                              sDate);
         if (rc)
         {
-            log<level::INFO>("ACF is not valid");
-            log<level::ERR>("Error: ", entry("rc=%0x", rc));
+            lg2::error("Error: ACF is not valid, rc={RC}", "RC", lg2::hex, rc);
             accessControlFile.clear();
             sDate.clear();
         }
