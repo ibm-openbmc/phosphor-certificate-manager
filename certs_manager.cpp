@@ -143,9 +143,9 @@ std::vector<std::string> splitCertificates(const std::string& sourceFilePath)
 Manager::Manager(sdbusplus::bus_t& bus, sdeventplus::Event& event,
                  const char* path, CertificateType type,
                  const std::string& unit, const std::string& installPath) :
-    internal::ManagerInterface(bus, path),
-    bus(bus), event(event), objectPath(path), certType(type),
-    unitToRestart(std::move(unit)), certInstallPath(std::move(installPath)),
+    internal::ManagerInterface(bus, path), bus(bus), event(event),
+    objectPath(path), certType(type), unitToRestart(std::move(unit)),
+    certInstallPath(std::move(installPath)),
     certParentInstallPath(fs::path(certInstallPath).parent_path())
 {
     try
@@ -558,16 +558,7 @@ void Manager::generateCSRHelper(
 {
     int ret = 0;
 
-    // set version of x509 req
-    int nVersion = 1;
     X509ReqPtr x509Req(X509_REQ_new(), ::X509_REQ_free);
-    ret = X509_REQ_set_version(x509Req.get(), nVersion);
-    if (ret == 0)
-    {
-        lg2::error("Error occurred during X509_REQ_set_version call");
-        ERR_print_errors_fp(stderr);
-        elog<InternalFailure>();
-    }
 
     // set subject of x509 req
     X509_NAME* x509Name = X509_REQ_get_subject_name(x509Req.get());

@@ -38,9 +38,8 @@ class ACFCertMgr : public CreateIface
      */
     ACFCertMgr(sdbusplus::bus::bus& bus, sdeventplus::Event& event,
                const char* path) :
-        CreateIface(bus, path),
-        bus(bus), event(event), objectPath(path), lastEntryId(0){};
-
+        CreateIface(bus, path), bus(bus), event(event), objectPath(path),
+        lastEntryId(0) {};
     /** @brief Implementation for InstallACF
      *  Replace the existing ACF with another ACF
      *
