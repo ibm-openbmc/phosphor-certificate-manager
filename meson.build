@@ -88,7 +88,7 @@ if not get_option('ca-cert-extension').disabled()
 endif
 
 if not get_option('acf-cert-extension').disabled()
-  subdir('bmc-acf')
+    subdir('bmc-acf')
 endif
 
 subdir('dist')
