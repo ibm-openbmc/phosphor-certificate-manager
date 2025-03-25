@@ -19,7 +19,7 @@ using InvalidCertificate =
 
 using Reason = xyz::openbmc_project::Certs::InvalidCertificate::REASON;
 
-constexpr auto ACF_FILE_PATH = "/etc/acf/service.acf";
+constexpr auto acfFilePath = "/etc/acf/service.acf";
 
 /** @brief Implementation for readBinaryFile
  *  Read file contents into buffer
@@ -67,7 +67,7 @@ static bool readBinaryFile(const std::string fileNameParm,
 bool acfInstalled()
 {
     std::error_code ec;
-    std::filesystem::path path = ACF_FILE_PATH;
+    std::filesystem::path path = acfFilePath;
     bool exists = std::filesystem::exists(path, ec);
     if (ec)
     {
@@ -83,7 +83,7 @@ acf_info ACFCertMgr::installACF(std::vector<uint8_t> accessControlFile)
     // delete acf file if accessControlFile is empty
     if (accessControlFile.empty() && acfInstalled())
     {
-        std::remove(ACF_FILE_PATH);
+        std::remove(acfFilePath);
         return std::make_tuple(accessControlFile, acfInstalled(), sDate);
     }
     // Verify and install ACF and get expiration date.
@@ -102,12 +102,12 @@ acf_info ACFCertMgr::installACF(std::vector<uint8_t> accessControlFile)
     return std::make_tuple(accessControlFile, acfInstalled(), sDate);
 }
 
-std::tuple<std::vector<uint8_t>, bool, std::string> ACFCertMgr::getACFInfo(void)
+std::tuple<std::vector<uint8_t>, bool, std::string> ACFCertMgr::getACFInfo()
 {
     std::string sDate;
     std::vector<uint8_t> accessControlFile;
 
-    if (!readBinaryFile(ACF_FILE_PATH, accessControlFile))
+    if (!readBinaryFile(acfFilePath, accessControlFile))
     {
         log<level::ERR>("ACF not installed or not readable");
     }

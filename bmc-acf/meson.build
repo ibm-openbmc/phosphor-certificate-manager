@@ -1,12 +1,12 @@
 cxx = meson.get_compiler('cpp')
-celogin_dep =  cxx.find_library('celogin')
+celogin_dep = cxx.find_library('celogin')
 if cxx.has_header('jsmn.h')
     jsmn_dep = declare_dependency()
 else
     jsmn_dep = dependency('jsmn')
 endif
 openssl_dep = dependency('openssl')
-tacf_dep = dependency('tacf', required : true)
+tacf_dep = dependency('tacf', required: true)
 
 bmc_acf_deps = [
     celogin_dep,
@@ -21,9 +21,7 @@ bmc_acf_deps = [
 
 bmc_acf_lib = static_library(
     'bmc_acf',
-    [
-        'acf_manager.cpp',
-    ],
+    ['acf_manager.cpp'],
     include_directories: '..',
     dependencies: bmc_acf_deps,
 )

@@ -13,12 +13,14 @@ option(
     description: 'Enable CA certificate manager (IBM specific)',
 )
 
-option('acf-cert-extension',
+option(
+    'acf-cert-extension',
     type: 'feature',
-    description: 'Enable ACF certificate manager (IBM specific)'
+    description: 'Enable ACF certificate manager (IBM specific)',
 )
 
-option('config-bmcweb',
+option(
+    'config-bmcweb',
     type: 'feature',
     description: 'Install bmcweb cert configs',
 )
