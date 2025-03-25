@@ -4,7 +4,7 @@
 #include <sdbusplus/server/object.hpp>
 #include <sdeventplus/source/event.hpp>
 #include <xyz/openbmc_project/Certs/ACF/server.hpp>
-typedef std::tuple<std::vector<uint8_t>, bool, std::string> acf_info;
+using acf_info = std::tuple<std::vector<uint8_t>, bool, std::string>;
 
 namespace acf
 {
@@ -48,14 +48,16 @@ class ACFCertMgr : public CreateIface
      *
      *  @return ACF related information.
      */
-    acf_info installACF(std::vector<uint8_t>) override;
+    acf_info installACF(
+        std::vector<uint8_t> /*accessControlFile*/ /*acfFile*/ /*acfFile*/)
+        override;
 
     /** @brief Implementation for GetACFInfo
      *  Returns contents of installed ACF
      *
      *  @return ACF related information.
      */
-    acf_info getACFInfo(void) override;
+    acf_info getACFInfo() override;
 
   private:
     /** @brief sdbusplus DBus bus connection. */
