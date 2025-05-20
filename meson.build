@@ -89,6 +89,7 @@ endif
 
 if not get_option('acf-cert-extension').disabled()
     subdir('bmc-acf')
+    subdir('acfshell')
 endif
 
 subdir('dist')
