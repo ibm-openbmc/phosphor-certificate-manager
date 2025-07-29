@@ -1,0 +1,11 @@
+[Unit]
+Description=BmcShell Script Runner Service
+
+[Service]
+ExecStart=/usr/bin/acfshell
+Restart=always
+Type=dbus
+BusName=xyz.openbmc_project.acfshell
+
+[Install]
+WantedBy=multi-user.target
