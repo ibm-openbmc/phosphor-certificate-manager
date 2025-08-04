@@ -127,6 +127,7 @@ struct ScriptRunner
     {
         std::vector<char> buf(4096);
         boost::system::error_code ec{};
+        std::stop_callback callback(token, [&ap] { ap.close(); });
         while (!ec && !token.stop_requested())
         {
             auto size = co_await net::async_read(
@@ -242,7 +243,7 @@ struct ScriptRunner
                 info, level, additionalData);
         if (ec)
         {
-            LOG_ERROR("Failed to create error log: {}", ec.message());
+            LOG_ERROR("Failed to create pel log: {}", ec.message());
             co_return;
         }
     }
@@ -276,7 +277,6 @@ struct ScriptRunner
 
             bp::async_pipe ap(io_context);
             bp::async_pipe ep(io_context);
-
             boost::system::error_code ec;
             bp::child c("/usr/bin/bash", filename,
                         bp::start_dir = scriptDir(hash), bp::std_out > ap,
@@ -290,18 +290,20 @@ struct ScriptRunner
             auto scritEntry = ScriptEntry{std::ref(c), std::move(callback), {}};
             auto token = scritEntry.stopSource.get_token();
             script_cache.emplace(hash, std::move(scritEntry));
-
             std::ofstream ofs(scriptOutputFileName(hash));
             co_await writeResult(ap, ep, ofs, token);
-            if (c.exit_code() != 0)
+            if (token.stop_requested())
             {
-                LOG_DEBUG("Script execution failed with exit code: {}",
+                LOG_DEBUG("Script execution cancelled , exited with code {}",
                           c.exit_code());
-                ofs << "Script execution failed with exit code: "
-                    << c.exit_code() << std::endl;
+                ofs << std::format(
+                           "Script execution cancelled, exited with code {}",
+                           c.exit_code())
+                    << std::endl;
                 co_await createInfoLog(
-                    std::format("Script execution failed with exit code: {}",
-                                c.exit_code()));
+                    std::format("Script execution cancelled"
+                                " for script: {}, exited with code {}",
+                                hash, c.exit_code()));
             }
             else
             {
@@ -310,11 +312,12 @@ struct ScriptRunner
             ofs.close();
             if (dumpNeeded)
             {
+                LOG_INFO("Dump needed for script {}, starting dump", hash);
                 co_await startDump(hash);
             }
             else
             {
-                LOG_DEBUG("Dump not needed for script {}", hash);
+                LOG_INFO("Dump not needed for script {}", hash);
                 // Remove the script directory and its contents
                 std::filesystem::remove_all(scriptDir(hash));
             }
@@ -377,21 +380,28 @@ struct ScriptRunner
      */
     bool cancel_script(const std::string& id)
     {
-        auto it = script_cache.find(id);
-        if (it == script_cache.end())
+        if (!isRunning(id))
         {
             return false;
         }
+        auto it = script_cache.find(id);
         LOG_DEBUG("Cancelling Script {} killig process {} ", id,
                   it->second.child.get().id());
         // it->second.child.get().terminate();
-
-        ::kill(it->second.child.get().id(), SIGKILL);
-
-        it->second.callback(boost::system::error_code{}, id);
         it->second.stopSource.request_stop();
+        if (::kill(it->second.child.get().id(), SIGKILL) == -1)
+        {
+            LOG_ERROR("Failed to kill process {}: {}",
+                      it->second.child.get().id(), strerror(errno));
+        }
+        it->second.callback(boost::system::error_code{}, id);
         remove(id);
         return true;
+    }
+    bool isRunning(const std::string& id) const
+    {
+        return (script_cache.find(id) != script_cache.end()) &&
+               script_cache.at(id).child.get().running();
     }
     ScriptRunner(net::io_context& io_context,
                  std::shared_ptr<sdbusplus::asio::connection> conn) :

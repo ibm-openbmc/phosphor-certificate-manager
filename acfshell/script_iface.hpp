@@ -79,7 +79,7 @@ struct ScriptIface
         bool success = scriptRunner.cancel_script(data.id);
         if (!success)
         {
-            LOG_ERROR("Failed to cancel script");
+            LOG_DEBUG("Failed to cancel script");
             return false;
         }
         return success;
