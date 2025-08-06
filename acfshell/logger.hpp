@@ -36,8 +36,8 @@ constexpr int toSystemdLevel(LogLevel level)
 
     const auto* it = std::ranges::find_if(
         mapping, [level](const std::pair<LogLevel, int>& elem) {
-            return elem.first == level;
-        });
+        return elem.first == level;
+    });
 
     // Unknown log level.  Just assume debug
     if (it == mapping.end())

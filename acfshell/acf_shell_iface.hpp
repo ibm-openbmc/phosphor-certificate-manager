@@ -90,12 +90,12 @@ struct AcfShellIface
             return activeScripts;
         });
 
-        iface->register_method(
-            "start", [this](const std::string& script, uint64_t timeout,
-                            bool dumpNeeded) {
-                ensureMaxActiveScripts();
-                return addToActive(script, timeout, dumpNeeded);
-            });
+        iface->register_method("start",
+                               [this](const std::string& script,
+                                      uint64_t timeout, bool dumpNeeded) {
+            ensureMaxActiveScripts();
+            return addToActive(script, timeout, dumpNeeded);
+        });
         iface->register_method("cancel", [this](const std::string& id) {
             auto iface = getScriptIface(id);
             if (iface)
@@ -228,8 +228,8 @@ struct AcfShellIface
     {
         auto it = std::find_if(scriptIfaces.begin(), scriptIfaces.end(),
                                [scriptId](const auto& iface) {
-                                   return iface->data.id == scriptId;
-                               });
+            return iface->data.id == scriptId;
+        });
         if (it != scriptIfaces.end())
         {
             return it->get();
@@ -253,8 +253,8 @@ struct AcfShellIface
     {
         auto it = std::find_if(scriptIfaces.begin(), scriptIfaces.end(),
                                [scriptId](const auto& iface) {
-                                   return iface->data.id == scriptId;
-                               });
+            return iface->data.id == scriptId;
+        });
         if (it != scriptIfaces.end())
         {
             scriptIfaces.erase(it);

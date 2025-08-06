@@ -73,23 +73,22 @@ auto make_awaitable_handler(HanlderFunc&& h)
         co_return co_await net::async_initiate<
             net::use_awaitable_t<>, ReturnTuple<Ret...>(ReturnTuple<Ret...>)>(
             [h = std::move(h)](auto handler) {
-                if constexpr (std::is_same_v<
-                                  boost::system::error_code,
-                                  std::tuple_element_t<0, std::tuple<Ret...>>>)
-                {
-                    PromiseType<decltype(handler), Ret...> promise{
-                        std::move(handler)};
-                    h(std::move(promise));
-                }
-                else
-                {
-                    PromiseType<decltype(handler), boost::system::error_code,
-                                Ret...>
-                        promise{std::move(handler)};
-                    h(std::move(promise));
-                }
-            },
-            mut_awaitable());
+            if constexpr (std::is_same_v<
+                              boost::system::error_code,
+                              std::tuple_element_t<0, std::tuple<Ret...>>>)
+            {
+                PromiseType<decltype(handler), Ret...> promise{
+                    std::move(handler)};
+                h(std::move(promise));
+            }
+            else
+            {
+                PromiseType<decltype(handler), boost::system::error_code,
+                            Ret...>
+                    promise{std::move(handler)};
+                h(std::move(promise));
+            }
+        }, mut_awaitable());
     };
 }
 } // namespace scrrunner

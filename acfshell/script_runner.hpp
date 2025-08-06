@@ -122,17 +122,16 @@ struct ScriptRunner
     {
         return std::format("{}/{}.out", scriptDir(id), id);
     }
-    net::awaitable<boost::system::error_code> writeResult(
-        bp::async_pipe& ap, std::ostream& os, std::stop_token token)
+    net::awaitable<boost::system::error_code>
+        writeResult(bp::async_pipe& ap, std::ostream& os, std::stop_token token)
     {
         std::vector<char> buf(4096);
         boost::system::error_code ec{};
         std::stop_callback callback(token, [&ap] { ap.close(); });
         while (!ec && !token.stop_requested())
         {
-            auto size = co_await net::async_read(
-                ap, net::buffer(buf),
-                net::redirect_error(net::use_awaitable, ec));
+            auto size = co_await ap.async_read_some(
+                net::buffer(buf), net::redirect_error(net::use_awaitable, ec));
             if (ec && ec != net::error::eof)
             {
                 LOG_INFO("Error: {}", ec.message());
@@ -147,9 +146,10 @@ struct ScriptRunner
         }
         co_return (ec == net::error::eof ? boost::system::error_code{} : ec);
     }
-    net::awaitable<boost::system::error_code> writeResult(
-        bp::async_pipe& out, bp::async_pipe& err, std::ostream& ofs,
-        std::stop_token token)
+    net::awaitable<boost::system::error_code> writeResult(bp::async_pipe& out,
+                                                          bp::async_pipe& err,
+                                                          std::ostream& ofs,
+                                                          std::stop_token token)
     {
         auto ec = co_await writeResult(out, ofs, token);
         if (ec)
@@ -361,8 +361,8 @@ struct ScriptRunner
             io_context,
             [this, filename, id, dumpNeeded,
              callback = std::move(callback)]() mutable -> net::awaitable<void> {
-                co_await execute(filename, id, dumpNeeded, std::move(callback));
-            },
+            co_await execute(filename, id, dumpNeeded, std::move(callback));
+        },
             net::detached);
         return true;
     }

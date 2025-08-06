@@ -93,13 +93,13 @@ struct ScriptIface
         timer->expires_after(std::chrono::seconds(data.timeout));
         timer->async_wait(
             [this, timer = timer](const boost::system::error_code& ec) {
-                if (ec)
-                {
-                    return;
-                }
-                LOG_DEBUG("Script {} timed out {}", data.id, data.timeout);
-                cancel();
-            });
+            if (ec)
+            {
+                return;
+            }
+            LOG_DEBUG("Script {} timed out {}", data.id, data.timeout);
+            cancel();
+        });
     }
     net::io_context& io_context;
     ScriptRunner& scriptRunner;
