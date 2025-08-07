@@ -130,9 +130,8 @@ struct ScriptRunner
         std::stop_callback callback(token, [&ap] { ap.close(); });
         while (!ec && !token.stop_requested())
         {
-            auto size = co_await net::async_read(
-                ap, net::buffer(buf),
-                net::redirect_error(net::use_awaitable, ec));
+            auto size = co_await ap.async_read_some(
+                net::buffer(buf), net::redirect_error(net::use_awaitable, ec));
             if (ec && ec != net::error::eof)
             {
                 LOG_INFO("Error: {}", ec.message());
