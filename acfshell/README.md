@@ -42,8 +42,6 @@ flowchart TD
  subgraph acfshell["acfshell"]
     direction TB
         M["Shell object"]
-        subgraph async["Async Script Execution"]
-          direction TB
             N["Script Object"]
             O["Script Runner"]
             P["Timer Task"]
@@ -51,8 +49,14 @@ flowchart TD
             R{"Dump Needed"}
             S["Clear Results"]
             T["Execute Dump"]
-        end
   end
+subgraph dumpmanager["dumpmanager"]
+    direction TB
+      A1["Dbug Collector"]
+            A2["PLDM"]
+            A3["PHYP"]
+        
+end
     A["Redfish Client"] -- Installs ACF file --> B["bmcweb"]
     B -- Invokes --> C
     C --> D
@@ -60,6 +64,9 @@ flowchart TD
     D -- Validation Success --> F
     F --> G
     G -- Resource Dump --> H
+    H -- Dump Dbus --> A1
+    A1 -- PLDM Dbus --> A2
+    A2 -- FileIO--> A3
     G -- bmcshell --> I
     G -- Service --> J
     G -- Admin Reset --> K

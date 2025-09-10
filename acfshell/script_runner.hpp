@@ -270,9 +270,7 @@ struct ScriptRunner
     {
         try
         {
-            co_await createInfoLog(
-                std::format("Start executing script: {} with dump needed {}",
-                            filename, dumpNeeded));
+            co_await createInfoLog("xyz.openbmc_project.acfshell.ShellStarted");
 
             bp::async_pipe ap(io_context);
             bp::async_pipe ep(io_context);
@@ -300,13 +298,12 @@ struct ScriptRunner
                            c.exit_code())
                     << std::endl;
                 co_await createInfoLog(
-                    std::format("Script execution cancelled"
-                                " for script: {}, exited with code {}",
-                                hash, c.exit_code()));
+                    "xyz.openbmc_project.acfshell.ShellCancelled");
             }
             else
             {
-                co_await createInfoLog("Script execution Finished");
+                co_await createInfoLog(
+                    "xyz.openbmc_project.acfshell.Completed");
             }
             ofs.close();
             if (dumpNeeded)
