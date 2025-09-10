@@ -228,10 +228,12 @@ struct ScriptRunner
         monitorDumpProgress(id, dumpId);
     }
 
-    net::awaitable<void> createInfoLog(const std::string& info)
+    net::awaitable<void> createInfoLog(const std::string& info,
+                                       const std::string& data)
     {
         std::map<std::string, std::string> additionalData;
         additionalData.emplace("_PID", std::to_string(getpid()));
+        additionalData.emplace("meta info", data);
         auto level =
             sdbusplus::xyz::openbmc_project::Logging::server::convertForMessage(
                 sdbusplus::xyz::openbmc_project::Logging::server::Entry::Level::
@@ -270,9 +272,8 @@ struct ScriptRunner
     {
         try
         {
-            co_await createInfoLog(
-                std::format("Start executing script: {} with dump needed {}",
-                            filename, dumpNeeded));
+            co_await createInfoLog("xyz.openbmc_project.acfshell.ShellStarted",
+                                   filename);
 
             bp::async_pipe ap(io_context);
             bp::async_pipe ep(io_context);
@@ -300,13 +301,12 @@ struct ScriptRunner
                            c.exit_code())
                     << std::endl;
                 co_await createInfoLog(
-                    std::format("Script execution cancelled"
-                                " for script: {}, exited with code {}",
-                                hash, c.exit_code()));
+                    "xyz.openbmc_project.acfshell.ShellCancelled", hash);
             }
             else
             {
-                co_await createInfoLog("Script execution Finished");
+                co_await createInfoLog("xyz.openbmc_project.acfshell.Completed",
+                                       hash);
             }
             ofs.close();
             if (dumpNeeded)
