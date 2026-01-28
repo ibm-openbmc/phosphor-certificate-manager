@@ -300,8 +300,8 @@ struct ScriptRunner
                            "Script execution cancelled, exited with code {}",
                            c.exit_code())
                     << std::endl;
-                co_await createInfoLog(
-                    "xyz.openbmc_project.acfshell.ShellCancelled", hash);
+                co_await createInfoLog("xyz.openbmc_project.acfshell.Cancelled",
+                                       hash);
             }
             else
             {
