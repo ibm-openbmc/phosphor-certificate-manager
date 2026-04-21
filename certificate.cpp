@@ -369,7 +369,6 @@ void Certificate::install(const std::string& certSrcFilePath, bool restore)
 
     // Keep certificate ID
     certId = generateCertId(*cert);
-
     // Parse the certificate file and populate properties
     populateProperties(*cert);
 
@@ -437,11 +436,18 @@ std::string Certificate::getCertId() const
 {
     return certId;
 }
-
 bool Certificate::isSame(const std::string& certPath)
 {
-    internal::X509Ptr cert = loadCert(certPath);
-    return getCertId() == generateCertId(*cert);
+    // Load the new certificate being uploaded
+    internal::X509Ptr newCert = loadCert(certPath);
+    // Load existing certificate from disk
+    internal::X509Ptr existingCert = loadCert(getCertFilePath());
+    // Generate fingerprint of existingCert
+    std::string existingFingerprint =
+        generateCertificateFingerprint(*existingCert);
+    // Generate fingerprint of new certificate
+    std::string newFingerprint = generateCertificateFingerprint(*newCert);
+    return (existingFingerprint == newFingerprint);
 }
 
 void Certificate::storageUpdate()
