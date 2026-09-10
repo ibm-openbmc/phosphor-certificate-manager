@@ -5,10 +5,7 @@
 #include <iostream>
 #include <source_location>
 #include <string>
-#undef LOG_WARNING
-#undef LOG_ERROR
-#undef LOG_DEBUG
-#undef LOG_INFO
+
 namespace scrrunner
 {
 enum class LogLevel
@@ -117,14 +114,26 @@ inline Logger<Lg2Logger>& getLogger()
 } // namespace scrrunner
 
 // Macros for clients to use logger
+// syslog.h (pulled in via sd-journal.h) defines LOG_DEBUG, LOG_INFO and
+// LOG_WARNING as numeric priority constants.  Undefine them so our function-
+// like macros can use the same names without a redefinition warning.
+#ifdef LOG_DEBUG
+#undef LOG_DEBUG
+#endif
 #define LOG_DEBUG(message, ...)                                                \
     scrrunner::getLogger().log(                                                \
         std::source_location::current(), scrrunner::LogLevel::DEBUG,           \
         std::format("{} :" message, "Debug", ##__VA_ARGS__))
+#ifdef LOG_INFO
+#undef LOG_INFO
+#endif
 #define LOG_INFO(message, ...)                                                 \
     scrrunner::getLogger().log(                                                \
         std::source_location::current(), scrrunner::LogLevel::INFO,            \
         std::format("{} :" message, "Info", ##__VA_ARGS__))
+#ifdef LOG_WARNING
+#undef LOG_WARNING
+#endif
 #define LOG_WARNING(message, ...)                                              \
     scrrunner::getLogger().log(                                                \
         std::source_location::current(), scrrunner::LogLevel::WARNING,         \
