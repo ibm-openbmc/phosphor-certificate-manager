@@ -83,9 +83,9 @@ struct AcfShellIface
 
         iface->register_method("active", [this]() {
             std::vector<std::string> activeScripts;
-            for (const auto& iface : scriptIfaces)
+            for (const auto& iF : scriptIfaces)
             {
-                activeScripts.push_back(iface->data.id);
+                activeScripts.push_back(iF->data.id);
             }
             return activeScripts;
         });
@@ -97,10 +97,9 @@ struct AcfShellIface
                 return addToActive(script, timeout, dumpNeeded);
             });
         iface->register_method("cancel", [this](const std::string& id) {
-            auto iface = getScriptIface(id);
-            if (iface)
+            if (auto iF = getScriptIface(id); iF)
             {
-                return iface->cancel();
+                return iF->cancel();
             }
             return false;
         });
@@ -115,9 +114,9 @@ struct AcfShellIface
         {
             LOG_DEBUG(
                 "Cancelling oldest script to maintain max active scripts");
-            auto iface = std::move(scriptIfaces.front());
+            auto iF = std::move(scriptIfaces.front());
             scriptIfaces.erase(scriptIfaces.begin());
-            iface->cancel();
+            iF->cancel();
         }
     }
     auto makeScriptId(const std::string& script)
@@ -125,7 +124,8 @@ struct AcfShellIface
         // Prepend current time to the script before hashing
         auto now = std::chrono::system_clock::now();
         auto now_time_t = std::chrono::system_clock::to_time_t(now);
-        std::string scriptWithTime = std::to_string(now_time_t) + "_" + script;
+        std::string scriptWithTime =
+            std::format("{}_{}", std::to_string(now_time_t), script);
         auto scriptId = ScriptRunner::makeHash(scriptWithTime);
         return scriptId;
     }
@@ -159,11 +159,11 @@ struct AcfShellIface
         }
         try
         {
-            auto iface = std::make_unique<ScriptIface>(
+            auto iF = std::make_unique<ScriptIface>(
                 io_context, scriptRunner,
                 ScriptIface::Data{script, *scriptId, timeout, dumpNeeded},
                 dbusServer);
-            return runScript(std::move(iface));
+            return runScript(std::move(iF));
         }
         catch (const std::exception& e)
         {

@@ -69,7 +69,7 @@ struct PromiseType
 template <typename... Ret, typename HanlderFunc>
 auto make_awaitable_handler(HanlderFunc&& h)
 {
-    return [h = std::move(h)]() -> AwaitableResult<Ret...> {
+    return [h = std::forward<HanlderFunc>(h)]() -> AwaitableResult<Ret...> {
         co_return co_await net::async_initiate<
             net::use_awaitable_t<>, ReturnTuple<Ret...>(ReturnTuple<Ret...>)>(
             [h = std::move(h)](auto handler) {
