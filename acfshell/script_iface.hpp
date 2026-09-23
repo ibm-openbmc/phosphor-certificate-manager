@@ -71,7 +71,12 @@ struct ScriptIface
     }
     ~ScriptIface()
     {
-        timer->cancel();
+        try
+        {
+            timer->cancel();
+        }
+        catch (...)
+        {}
         objServer.remove_interface(dbusIface);
     }
     bool cancel()

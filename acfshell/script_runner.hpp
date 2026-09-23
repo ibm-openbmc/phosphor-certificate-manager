@@ -272,7 +272,7 @@ struct ScriptRunner
     {
         try
         {
-            co_await createInfoLog("xyz.openbmc_project.acfshell.ShellStarted",
+            co_await createInfoLog("xyz.openbmc_project.acfshell.Started",
                                    filename);
 
             bp::async_pipe ap(io_context);
@@ -411,7 +411,8 @@ struct ScriptRunner
         while (!script_cache.empty())
         {
             auto p = *script_cache.begin();
-            p.second.child.get().terminate();
+            boost::system::error_code ec;
+            p.second.child.get().terminate(ec);
             remove(p.first);
         }
     }
