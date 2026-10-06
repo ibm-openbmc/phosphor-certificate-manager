@@ -170,8 +170,8 @@ inline AwaitableResult<Dict> getSubTreePaths(
 template <typename Dict>
 inline AwaitableResult<Dict> getAssociatedSubTree(
     sdbusplus::asio::connection& bus,
-    const sdbusplus::message::object_path& associatedPath,
-    const sdbusplus::message::object_path& path, int depth,
+    const sdbusplus::object_path& associatedPath,
+    const sdbusplus::object_path& path, int depth,
     const std::vector<std::string>& interfaces = {})
 {
     auto h = make_awaitable_handler<Dict>([&](auto promise) {
@@ -191,8 +191,8 @@ inline AwaitableResult<Dict> getAssociatedSubTree(
 template <typename Dict>
 inline AwaitableResult<Dict> getAssociatedSubTreePaths(
     sdbusplus::asio::connection& bus,
-    const sdbusplus::message::object_path& associatedPath,
-    const sdbusplus::message::object_path& path, int32_t depth,
+    const sdbusplus::object_path& associatedPath,
+    const sdbusplus::object_path& path, int32_t depth,
     const std::vector<std::string>& interfaces = {})
 {
     auto h = make_awaitable_handler<Dict>([&](auto promise) {
@@ -283,7 +283,7 @@ inline AwaitableResult<Dict> getAssociationEndPoints(
 template <typename Dict>
 inline AwaitableResult<Dict> getManagedObjects(
     sdbusplus::asio::connection& bus, const std::string& service,
-    const sdbusplus::message::object_path& path)
+    const sdbusplus::object_path& path)
 {
     auto h = make_awaitable_handler<Dict>([&](auto promise) {
         bus.async_method_call(
@@ -317,7 +317,7 @@ inline AwaitableResult<Dict> getAncestors(
 
 inline AwaitableResult<std::string> introspect(
     sdbusplus::asio::connection& bus, const std::string& service,
-    const sdbusplus::message::object_path& path)
+    const sdbusplus::object_path& path)
 {
     auto h = make_awaitable_handler<std::string>([&](auto promise) {
         bus.async_method_call(

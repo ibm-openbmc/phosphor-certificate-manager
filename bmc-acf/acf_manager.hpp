@@ -36,7 +36,7 @@ class ACFCertMgr : public CreateIface
      *  @param[in] path - Path to attach at.
      *  @param[in] event - sd event handler.
      */
-    ACFCertMgr(sdbusplus::bus::bus& bus, sdeventplus::Event& event,
+    ACFCertMgr(sdbusplus::bus_t& bus, sdeventplus::Event& event,
                const char* path) :
         CreateIface(bus, path), bus(bus), event(event), objectPath(path),
         lastEntryId(0) {};
@@ -61,7 +61,7 @@ class ACFCertMgr : public CreateIface
 
   private:
     /** @brief sdbusplus DBus bus connection. */
-    sdbusplus::bus::bus& bus;
+    sdbusplus::bus_t& bus;
     // sdevent Event handle
     sdeventplus::Event& event;
     /** @brief object path */

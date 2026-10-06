@@ -4,7 +4,10 @@
 
 #include <openssl/evp.h>
 
-#include <boost/process.hpp>
+#include <boost/process/v1/async_pipe.hpp>
+#include <boost/process/v1/child.hpp>
+#include <boost/process/v1/io.hpp>
+#include <boost/process/v1/start_dir.hpp>
 #include <xyz/openbmc_project/Logging/Create/server.hpp>
 #include <xyz/openbmc_project/Logging/Entry/server.hpp>
 
@@ -23,7 +26,7 @@ constexpr auto LOGGING_SVC = "xyz.openbmc_project.Logging";
 constexpr auto LOGGING_PATH = "/xyz/openbmc_project/logging";
 constexpr auto LOGGING_CREATE_INTF = "xyz.openbmc_project.Logging.Create";
 
-namespace bp = boost::process;
+namespace bp = boost::process::v1;
 namespace scrrunner
 /**
  * @brief ScriptRunner is a utility struct for managing the execution of shell
@@ -64,7 +67,7 @@ namespace scrrunner
 {
 struct ScriptRunner
 {
-    std::map<std::string, std::unique_ptr<sdbusplus::bus::match::match>>
+    std::map<std::string, std::unique_ptr<sdbusplus::match>>
         dumpProgressMatches;
     using Callback =
         std::function<void(boost::system::error_code, std::string)>;
@@ -195,7 +198,7 @@ struct ScriptRunner
             }
         };
         dumpProgressMatches.emplace(
-            dumpId, std::make_unique<sdbusplus::bus::match::match>(
+            dumpId, std::make_unique<sdbusplus::match>(
                         *conn, matchRule.c_str(), std::move(propcallback)));
     }
     net::awaitable<void> startDump(const std::string& id)
@@ -207,7 +210,7 @@ struct ScriptRunner
         while (i++ < 3)
         {
             auto [ec, path] = co_await awaitable_dbus_method_call<
-                sdbusplus::message::object_path>(
+                sdbusplus::object_path>(
                 *conn, "xyz.openbmc_project.Dump.Manager",
                 "/xyz/openbmc_project/dump/bmc",
                 "xyz.openbmc_project.Dump.Create", "CreateDump", paramtype());
